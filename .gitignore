@@ -37,7 +37,7 @@ release/
 ../release/
 
 # CodeBuddy 配置
-.codebuddy/plan/
+.codebuddy/
 
 # Dify 运行时数据
 dify/.env
