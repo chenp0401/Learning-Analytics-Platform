@@ -1,0 +1,93 @@
+# ============================================================
+# 文本校对工作流配置
+# ============================================================
+# 
+# 此文件描述了在 Dify 控制台中创建校对工作流的配置说明。
+# Dify 工作流通过控制台 UI 创建，此文件作为配置参考文档。
+#
+# 工作流名称：文本校对（Proofread）
+# 工作流类型：Workflow
+# 
+# ============================================================
+
+# 工作流结构：
+#
+#   [开始] → [LLM 校对节点] → [结果解析节点] → [结束]
+#
+# ============================================================
+
+workflow:
+  name: "文本校对工作流"
+  description: "检测试卷文本中的错别字、语法错误和格式问题"
+  type: workflow
+
+  # 输入变量
+  inputs:
+    - name: text
+      type: string
+      required: true
+      description: "待校对的文本内容"
+    - name: task
+      type: string
+      required: false
+      default: "proofread"
+      description: "任务类型标识"
+
+  # 节点定义
+  nodes:
+    # 节点 1：LLM 校对
+    - id: llm_proofread
+      type: llm
+      model:
+        provider: deepseek
+        name: deepseek-chat
+        temperature: 0.1
+        max_tokens: 4096
+      prompt: |
+        你是一个专业的中文文本校对助手，专门用于检查教育类试卷文本。请仔细检查以下文本，找出所有错误并以 JSON 格式返回。
+
+        ## 检查范围
+        1. **错别字（typo）**：检测错别字、同音字误用、形近字误用
+        2. **语法错误（grammar）**：检测语法不通顺、成分缺失、搭配不当
+        3. **格式问题（format）**：检测题号格式不统一、选项标号不规范、标点符号使用不当
+
+        ## 待检查文本
+        ```
+        {{text}}
+        ```
+
+        ## 输出格式
+        请严格按照以下 JSON 格式输出，不要添加任何额外说明：
+        ```json
+        {
+          "errors": [
+            {
+              "type": "typo|grammar|format",
+              "start": 0,
+              "end": 2,
+              "original": "错误的文本",
+              "suggestion": "正确的文本",
+              "description": "错误说明"
+            }
+          ]
+        }
+        ```
+
+        注意事项：
+        - start 和 end 是错误文本在原文中的字符位置（从 0 开始）
+        - 如果没有发现错误，返回 {"errors": []}
+        - 只返回 JSON，不要有其他文字
+
+    # 节点 2：结果输出
+    - id: output
+      type: end
+      outputs:
+        - name: result
+          type: string
+          value: "{{llm_proofread.text}}"
+
+  # 输出变量
+  outputs:
+    - name: result
+      type: string
+      description: "校对结果 JSON"

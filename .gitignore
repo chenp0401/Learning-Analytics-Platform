@@ -1,0 +1,44 @@
+# 依赖
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 构建产物
+dist/
+build/
+*.egg-info/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 日志
+*.log
+logs/
+
+# 上传文件
+uploads/
+
+# Docker
+.docker/
+
+# 打包产物
+release/
+../release/
+
+# CodeBuddy 配置
+.codebuddy/plan/
+
+# Dify 运行时数据
+dify/.env
+dify/docker/volumes/

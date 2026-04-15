@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # 前端应用
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - analysis-service
+    networks:
+      - app-network
+
+  # 数据分析服务
+  analysis-service:
+    build:
+      context: ./analysis-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/edu_platform}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - DIFY_API_URL=${DIFY_API_URL:-http://dify-nginx:80/v1}
+      - DIFY_API_KEY=${DIFY_API_KEY:-your-dify-api-key-here}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - upload-data:/app/uploads
+    networks:
+      - app-network
+
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: edu_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - app-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  upload-data:
+
+networks:
+  app-network:
+    driver: bridge
